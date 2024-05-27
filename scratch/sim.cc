@@ -15,12 +15,11 @@ std::vector<std::vector<int>> readMatrixFromCSV(const std::string& filename);
 void ConfigureCommandLine(int argc, char* argv[]);
 void SetupLogging();
 NodeContainer CreateNodes(int nodeNum);
-std::vector<NetDeviceContainer> SetupDataLinkLayer(NodeContainer& nodes,
-                                                   std::vector<std::vector<int>> topologyAsMatrix);
-std::vector<Ipv4InterfaceContainer> SetupNetworkLayer(NodeContainer& nodes,
-                                                      std::vector<NetDeviceContainer>& devices);
+void SetupIPLayer(NodeContainer& nodes,
+                  std::vector<std::vector<int>> topologyAsMatrix,
+                  std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap);
 void InstallApplications(NodeContainer& nodes,
-                         std::vector<Ipv4InterfaceContainer>& interfaces,
+                         std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
                          std::vector<std::vector<int>> senderSinkerAsMatrix);
 
 NS_LOG_COMPONENT_DEFINE("FirstScriptExample");
@@ -32,15 +31,18 @@ main(int argc, char* argv[])
     std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_NAME;
     std::vector<std::vector<int>> topologyAsMatrix = readMatrixFromCSV(topologyFileName);
     std::vector<std::vector<int>> senderSinkerAsMatrix = readMatrixFromCSV(senderSinkerFileName);
+    std::unordered_map<std::int16_t, Ipv4Address> nodeAddressHashMap;
+
     int nodeNum = topologyAsMatrix.size();
 
     ConfigureCommandLine(argc, argv);
     SetupLogging();
 
     NodeContainer nodes = CreateNodes(nodeNum);
-    std::vector<ns3::NetDeviceContainer> devices = SetupDataLinkLayer(nodes, topologyAsMatrix);
-    std::vector<ns3::Ipv4InterfaceContainer> interfaces = SetupNetworkLayer(nodes, devices);
-    InstallApplications(nodes, interfaces, senderSinkerAsMatrix);
+    SetupIPLayer(nodes, topologyAsMatrix, nodeAddressHashMap);
+    InstallApplications(nodes, nodeAddressHashMap, senderSinkerAsMatrix);
+
+    Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
     Simulator::Run();
     Simulator::Destroy();
@@ -71,70 +73,89 @@ CreateNodes(int nodeNum)
     return nodes;
 }
 
-// 隣接行列(topologyAsMatrix)を元にリンクを貼る。リンクを貼ったノードのペアはdeviceとして返却される。
-std::vector<NetDeviceContainer>
-SetupDataLinkLayer(NodeContainer& nodes, std::vector<std::vector<int>> topologyAsMatrix)
+// 隣接行列(topologyAsMatrix)を元にリンクを貼り、それぞれのノードにIPを割り振る。ノードのアドレスはnodeAddressHashMapに格納される。(ノードのindexからaddressを取り出せる)
+void
+SetupIPLayer(NodeContainer& nodes,
+             std::vector<std::vector<int>> topologyAsMatrix,
+             std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap)
 {
+    NS_LOG_UNCOND("Setup IP");
+    // Linkの設定
     std::vector<NetDeviceContainer> devices;
     PointToPointHelper pointToPoint;
     pointToPoint.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
     pointToPoint.SetChannelAttribute("Delay", StringValue("2ms"));
 
+    // IPの設定
+    std::vector<Ipv4InterfaceContainer> interfaces;
+    InternetStackHelper stack;
+    stack.Install(nodes);
+
+    // リンクとIPをinstallする
     for (size_t i = 0; i < topologyAsMatrix.size(); ++i)
     {
         for (size_t j = 0; j < topologyAsMatrix[i].size(); ++j)
         {
             if (topologyAsMatrix[i][j] == 1)
             {
-                NetDeviceContainer device = pointToPoint.Install(nodes.Get(i), nodes.Get(j));
+                Ipv4AddressHelper address;
+                // ネットワーク部をそれぞれのデバイスごとに振り分ける。
+                std::string ipAddress = "10.1." + std::to_string(i + 1) + ".0";
+                const char* ipAddressStr = ipAddress.c_str();
+                Ipv4Address base(ipAddressStr);
+                address.SetBase(base, "255.255.255.0");
+
+                NetDeviceContainer devices = pointToPoint.Install(nodes.Get(i), nodes.Get(j));
                 std::cout << "topologyAsMatrix[" << i << "][" << j
                           << "] = " << topologyAsMatrix[i][j] << std::endl;
-                devices.push_back(device);
+
+                Ipv4InterfaceContainer interface = address.Assign(devices);
+                std::cout << "node[" << i << "]address:" << interface.GetAddress(0, 0) << std::endl;
+                std::cout << "node[" << j << "]address:" << interface.GetAddress(1, 0) << std::endl;
+                nodeAddressHashMap[i] = interface.GetAddress(0, 0);
+                nodeAddressHashMap[j] = interface.GetAddress(1, 0);
             }
         }
     }
-    return devices;
-}
-
-// デバイスそれぞれにIPを振り分ける。10.1.1.1からアドレス部分がインクリメントされる。IPがそれぞれ振られたnodeのペア(device)はinterfaceとして返却される。
-std::vector<Ipv4InterfaceContainer>
-SetupNetworkLayer(NodeContainer& nodes, std::vector<NetDeviceContainer>& devices)
-{
-    std::vector<Ipv4InterfaceContainer> interfaces;
-    InternetStackHelper stack;
-    stack.Install(nodes);
-
-    Ipv4AddressHelper address;
-    address.SetBase("10.1.1.0", "255.255.255.0");
-
-    for (int i = 0; i < devices.size(); i++)
-    {
-        Ipv4InterfaceContainer interface = address.Assign(devices[i]);
-        std::cout << "address: " << interface.GetAddress(0, 0) << "," << interface.GetAddress(1, 0)
-                  << std::endl;
-        interfaces.push_back(interface);
-    }
-    return interfaces;
 }
 
 void
 InstallApplications(NodeContainer& nodes,
-                    std::vector<Ipv4InterfaceContainer>& interfaces,
+                    std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
                     std::vector<std::vector<int>> senderSinkerAsMatrix)
 {
-    UdpEchoServerHelper echoServer(20);
-    ApplicationContainer serverApps = echoServer.Install(nodes.Get(0));
-    serverApps.Start(Seconds(1.0));
-    serverApps.Stop(Seconds(10.0));
+    NS_LOG_UNCOND("Install Application");
+    for (int i = 0; i < senderSinkerAsMatrix.size(); i++)
+    {
+        int sourceNodeIndex = senderSinkerAsMatrix[i][0];
+        int sinkNodeIndex = senderSinkerAsMatrix[i][1];
 
-    UdpEchoClientHelper echoClient(interfaces[1].GetAddress(1), 20);
-    echoClient.SetAttribute("MaxPackets", UintegerValue(3));
-    echoClient.SetAttribute("Interval", TimeValue(Seconds(2.0)));
-    echoClient.SetAttribute("PacketSize", UintegerValue(1024));
+        // 同じノードに複数のserverをinstallする可能性があり、port番号が被らないように、loopのindexをport番号とする。
+        // 49152-65535 は動的に振り分けられるものとなっているので、こちらの範囲のportを用いる
+        int portNum = i + 49152;
 
-    ApplicationContainer clientApps = echoClient.Install(nodes.Get(1));
-    clientApps.Start(Seconds(2.0));
-    clientApps.Stop(Seconds(10.0));
+        // sink serverの準備
+        UdpEchoServerHelper echoServer(portNum);
+        ApplicationContainer serverApps = echoServer.Install(nodes.Get(sinkNodeIndex));
+        serverApps.Start(Seconds(1.0));
+        serverApps.Stop(Seconds(10.0));
+
+        // source serverの準備。
+        // 宛先などをセットアップ
+        UdpEchoClientHelper echoClient(nodeAddressHashMap[sinkNodeIndex], portNum);
+        echoClient.SetAttribute("MaxPackets", UintegerValue(2));
+        echoClient.SetAttribute("Interval", TimeValue(Seconds(2.0)));
+        echoClient.SetAttribute("PacketSize", UintegerValue(1024));
+
+        // install
+        ApplicationContainer clientApps = echoClient.Install(nodes.Get(sourceNodeIndex));
+        clientApps.Start(Seconds(2.0));
+        clientApps.Stop(Seconds(10.0));
+
+        std::cout << "node[" << sourceNodeIndex << "] address"
+                  << nodeAddressHashMap[sourceNodeIndex] << ", send to send node[" << sinkNodeIndex
+                  << "], address " << nodeAddressHashMap[sinkNodeIndex] << std::endl;
+    }
 }
 
 std::vector<std::vector<int>>
