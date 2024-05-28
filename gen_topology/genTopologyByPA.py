@@ -2,6 +2,16 @@ from turtle import update
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import pandas as pd
+import itertools
+import random
+
+# Parameters
+num_nodes = 100  # Total number of nodes in the graph
+M = 1           # Number of edges to attach from a new node to existing nodes
+alpha = 0.3  # Fraction of links that are updated
+leaf_pairs_csv_file_path = './data/leaf_pairs.csv'
+adjacency_matrix_csv_file_path = './data/adjacency_matrix.csv'
 
 
 def preferential_attachment_graph(num_nodes, M, alpha):
@@ -26,23 +36,46 @@ def preferential_attachment_graph(num_nodes, M, alpha):
             G.add_edge(new_node, existing_node)
 
     adj_matrix = nx.to_numpy_array(G)
-    return adj_matrix
+
+    # シミュレーションように上三角部分の1を対象部分に移し、下三角行列にする
+    for i in range(adj_matrix.shape[0]):
+        for j in range(i + 1, adj_matrix.shape[1]):
+            if adj_matrix[i, j] == 1:
+                adj_matrix[i, j] = 0
+                adj_matrix[j, i] = 1
+    return G, adj_matrix
 
 
-# Parameters
-num_nodes = 200  # Total number of nodes in the graph
-M = 1           # Number of edges to attach from a new node to existing nodes
-alpha = 0.3  # Fraction of links that are updated
+def find_leaf_pairs(G, num_pairs=3):
+    leaves = [node for node, degree in G.degree() if degree == 1]
+    leaf_pairs = list(itertools.combinations(leaves, 2))
+    random.shuffle(leaf_pairs)
+    return leaf_pairs[:num_pairs]
+
 
 # Generate the preferential attachment graph
-adj_matrix = preferential_attachment_graph(num_nodes, M, alpha)
+G, adj_matrix = preferential_attachment_graph(num_nodes, M, alpha)
 
-# Print the adjacency matrix
-print(adj_matrix)
+# Find 3 pairs of leaf nodes
+leaf_pairs = find_leaf_pairs(G, num_pairs=3)
+
+# Save the leaf pairs to a CSV file
+leaf_pairs_df = pd.DataFrame(leaf_pairs)
+leaf_pairs_df.to_csv(leaf_pairs_csv_file_path, index=False, header=False)
+
+# Print the path to the CSV file
+print(f"Leaf pairs saved to {leaf_pairs_csv_file_path}")
+
+# Save the adjacency matrix to a CSV file
+df = pd.DataFrame(adj_matrix)
+df.to_csv(adjacency_matrix_csv_file_path, index=False, header=False)
+
+# Print the path to the CSV file
+print(f"Adjacency matrix saved to {adjacency_matrix_csv_file_path}")
 
 # Optionally, visualize the graph
 G = nx.from_numpy_array(adj_matrix)
-plt.figure(figsize=(8, 8))
-nx.draw(G, node_size=50, node_color='blue',
-        edge_color='gray', with_labels=False)
+plt.figure(figsize=(70, 10))
+nx.draw(G, node_size=70, node_color='blue',
+        edge_color='gray', with_labels=True)
 plt.show()

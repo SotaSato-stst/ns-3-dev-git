@@ -8,8 +8,8 @@ using namespace ns3;
 
 #define NET_MASK "255.255.255.0"
 #define FIRST_NO "0.0.0.1"
-#define SOURCE_TOPOLOGY_FILE_NAME "./data/topology_sample.csv"
-#define SOURCE_SENDER_SINKER_FILE_NAME "./data/sender_sinker_sample.csv"
+#define SOURCE_TOPOLOGY_FILE_NAME "./data/adjacency_matrix.csv"
+#define SOURCE_SENDER_SINKER_FILE_NAME "./data/leaf_pairs.csv"
 
 std::vector<std::vector<int>> readMatrixFromCSV(const std::string& filename);
 void ConfigureCommandLine(int argc, char* argv[]);
