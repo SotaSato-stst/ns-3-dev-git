@@ -1,8 +1,11 @@
 #include "ns3/applications-module.h"
 #include "ns3/core-module.h"
+#include "ns3/flow-monitor-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-module.h"
+#include "ns3/tcp-header.h"
+#include "ns3/udp-header.h"
 
 using namespace ns3;
 
@@ -10,6 +13,8 @@ using namespace ns3;
 #define FIRST_NO "0.0.0.1"
 #define SOURCE_TOPOLOGY_FILE_NAME "./data/adjacency_matrix.csv"
 #define SOURCE_SENDER_SINKER_FILE_NAME "./data/leaf_pairs.csv"
+#define SIM_START 00.10
+#define SIM_STOP 10.10
 
 std::vector<std::vector<int>> readMatrixFromCSV(const std::string& filename);
 void ConfigureCommandLine(int argc, char* argv[]);
@@ -21,6 +26,17 @@ void SetupIPLayer(NodeContainer& nodes,
 void InstallApplications(NodeContainer& nodes,
                          std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
                          std::vector<std::vector<int>> senderSinkerAsMatrix);
+void installUdpEchoApplication(NodeContainer& nodes,
+                               int sourceNodeIndex,
+                               int sinkNodeIndex,
+                               Ipv4Address sinkNodeAddress,
+                               int sinkPort);
+void installFTPApplication(NodeContainer& nodes,
+                           int sourceNodeIndex,
+                           int sinkNodeIndex,
+                           Ipv4Address sinkNodeAddress,
+                           int sinkPort);
+void OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor, Ptr<Ipv4FlowClassifier> flowmon);
 
 NS_LOG_COMPONENT_DEFINE("FirstScriptExample");
 
@@ -44,8 +60,20 @@ main(int argc, char* argv[])
 
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
+    // Setup FlowMonitor
+    FlowMonitorHelper flowmon;
+    flowmon.SetMonitorAttribute("JitterBinWidth", ns3::DoubleValue(0.001));
+    flowmon.SetMonitorAttribute("DelayBinWidth", ns3::DoubleValue(0.001));
+    flowmon.SetMonitorAttribute("PacketSizeBinWidth", ns3::DoubleValue(0.001));
+    Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+
+    Simulator::Stop(Seconds(SIM_STOP));
     Simulator::Run();
     Simulator::Destroy();
+
+    Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon.GetClassifier());
+
+    OutputFlowMonitor(monitor, classifier);
 
     return 0;
 }
@@ -62,6 +90,7 @@ SetupLogging()
 {
     LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
+    // LogComponentEnable("TcpSocketBase", LOG_LEVEL_INFO);
 }
 
 NodeContainer
@@ -129,32 +158,94 @@ InstallApplications(NodeContainer& nodes,
     {
         int sourceNodeIndex = senderSinkerAsMatrix[i][0];
         int sinkNodeIndex = senderSinkerAsMatrix[i][1];
+        Ipv4Address sinkNodeAddress = nodeAddressHashMap[sinkNodeIndex];
 
         // 同じノードに複数のserverをinstallする可能性があり、port番号が被らないように、loopのindexをport番号とする。
         // 49152-65535 は動的に振り分けられるものとなっているので、こちらの範囲のportを用いる
-        int portNum = i + 49152;
+        int sinkPort = i + 49152;
 
-        // sink serverの準備
-        UdpEchoServerHelper echoServer(portNum);
-        ApplicationContainer serverApps = echoServer.Install(nodes.Get(sinkNodeIndex));
-        serverApps.Start(Seconds(1.0));
-        serverApps.Stop(Seconds(10.0));
-
-        // source serverの準備。
-        // 宛先などをセットアップ
-        UdpEchoClientHelper echoClient(nodeAddressHashMap[sinkNodeIndex], portNum);
-        echoClient.SetAttribute("MaxPackets", UintegerValue(2));
-        echoClient.SetAttribute("Interval", TimeValue(Seconds(2.0)));
-        echoClient.SetAttribute("PacketSize", UintegerValue(1024));
-
-        // install
-        ApplicationContainer clientApps = echoClient.Install(nodes.Get(sourceNodeIndex));
-        clientApps.Start(Seconds(2.0));
-        clientApps.Stop(Seconds(10.0));
+        installFTPApplication(nodes, sourceNodeIndex, sinkNodeIndex, sinkNodeAddress, sinkPort);
 
         std::cout << "node[" << sourceNodeIndex << "] address"
                   << nodeAddressHashMap[sourceNodeIndex] << ", send to send node[" << sinkNodeIndex
-                  << "], address " << nodeAddressHashMap[sinkNodeIndex] << std::endl;
+                  << "], address " << sinkNodeAddress << std::endl;
+    }
+}
+
+void
+installUdpEchoApplication(NodeContainer& nodes,
+                          int sourceNodeIndex,
+                          int sinkNodeIndex,
+                          Ipv4Address sinkNodeAddress,
+                          int sinkPort)
+{
+    // sink serverの準備
+    UdpEchoServerHelper echoServer(sinkPort);
+    ApplicationContainer sinkApp = echoServer.Install(nodes.Get(sinkNodeIndex));
+    sinkApp.Start(Seconds(SIM_START + 0.10));
+    sinkApp.Stop(Seconds(SIM_STOP - 0.10));
+
+    // source serverの準備。
+    // 宛先などをセットアップ
+    UdpEchoClientHelper echoClient(sinkNodeAddress, sinkPort);
+    echoClient.SetAttribute("MaxPackets", UintegerValue(2));
+    echoClient.SetAttribute("Interval", TimeValue(Seconds(2.0)));
+    echoClient.SetAttribute("PacketSize", UintegerValue(1024));
+    ApplicationContainer sourceApp = echoClient.Install(nodes.Get(sourceNodeIndex));
+    sourceApp.Start(Seconds(SIM_START + 0.10));
+    sourceApp.Stop(Seconds(SIM_STOP - 0.10));
+}
+
+void
+installFTPApplication(NodeContainer& nodes,
+                      int sourceNodeIndex,
+                      int sinkNodeIndex,
+                      Ipv4Address sinkNodeAddress,
+                      int sinkPort)
+{
+    // Source側の設定
+    AddressValue remoteAddress(InetSocketAddress(sinkNodeAddress, sinkPort));
+    BulkSendHelper ftp("ns3::TcpSocketFactory", Address());
+    ftp.SetAttribute("Remote", remoteAddress);
+    ftp.SetAttribute("MaxBytes", UintegerValue(500 * 1024 * 1024));
+    ApplicationContainer sourceApp = ftp.Install(nodes.Get(sourceNodeIndex));
+    sourceApp.Start(Seconds(SIM_START + 0.10));
+    sourceApp.Stop(Seconds(SIM_STOP - 0.10));
+
+    // Sink側の設定
+    Address sinkAddress(InetSocketAddress(Ipv4Address::GetAny(), sinkPort));
+    PacketSinkHelper sinkHelper("ns3::TcpSocketFactory", sinkAddress);
+    ApplicationContainer sinkApp = sinkHelper.Install(nodes.Get(sinkNodeIndex));
+    sinkApp.Start(Seconds(SIM_START + 0.10));
+    sinkApp.Stop(Seconds(SIM_STOP - 0.10));
+}
+
+void
+OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor, Ptr<Ipv4FlowClassifier> classifier)
+{
+    monitor->CheckForLostPackets();
+    std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats();
+
+    std::cout << "----------------------------------\n";
+
+    for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin();
+         i != stats.end();
+         ++i)
+    {
+        Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(i->first);
+
+        // if (t.sourceAddress == "10.1.56.1" && t.destinationAddress == "10.1.84.1")
+        // {
+        std::cout << "Flow " << i->first << " (" << t.sourceAddress << " -> "
+                  << t.destinationAddress << ")\n";
+        std::cout << "TroughPut: "
+                  << i->second.rxBytes * 8.0 /
+                         (i->second.timeLastRxPacket.GetSeconds() -
+                          i->second.timeFirstTxPacket.GetSeconds()) /
+                         1024
+                  << " Kbps\n";
+        std::cout << "----------------------------------\n";
+        // }
     }
 }
 

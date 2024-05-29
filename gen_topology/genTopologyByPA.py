@@ -10,7 +10,7 @@ import random
 num_nodes = 100  # Total number of nodes in the graph
 M = 1           # Number of edges to attach from a new node to existing nodes
 alpha = 0.3  # Fraction of links that are updated
-sourceSinkNum = 30
+sourceSinkNum = 1
 leaf_pairs_csv_file_path = './data/leaf_pairs.csv'
 adjacency_matrix_csv_file_path = './data/adjacency_matrix.csv'
 
