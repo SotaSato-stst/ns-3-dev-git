@@ -10,6 +10,7 @@ import random
 num_nodes = 100  # Total number of nodes in the graph
 M = 1           # Number of edges to attach from a new node to existing nodes
 alpha = 0.3  # Fraction of links that are updated
+sourceSinkNum = 30
 leaf_pairs_csv_file_path = './data/leaf_pairs.csv'
 adjacency_matrix_csv_file_path = './data/adjacency_matrix.csv'
 
@@ -57,7 +58,7 @@ def find_leaf_pairs(G, num_pairs=3):
 G, adj_matrix = preferential_attachment_graph(num_nodes, M, alpha)
 
 # Find 3 pairs of leaf nodes
-leaf_pairs = find_leaf_pairs(G, num_pairs=3)
+leaf_pairs = find_leaf_pairs(G, num_pairs=sourceSinkNum)
 
 # Save the leaf pairs to a CSV file
 leaf_pairs_df = pd.DataFrame(leaf_pairs)
