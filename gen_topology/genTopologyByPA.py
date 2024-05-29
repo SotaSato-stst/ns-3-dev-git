@@ -7,10 +7,10 @@ import itertools
 import random
 
 # Parameters
-num_nodes = 100  # Total number of nodes in the graph
+num_nodes = 200  # Total number of nodes in the graph
 M = 1           # Number of edges to attach from a new node to existing nodes
-alpha = 0.3  # Fraction of links that are updated
-sourceSinkNum = 1
+alpha = 10  # Fraction of links that are updated
+sourceSinkNum = 5
 leaf_pairs_csv_file_path = './data/leaf_pairs.csv'
 adjacency_matrix_csv_file_path = './data/adjacency_matrix.csv'
 
@@ -76,7 +76,7 @@ print(f"Adjacency matrix saved to {adjacency_matrix_csv_file_path}")
 
 # Optionally, visualize the graph
 G = nx.from_numpy_array(adj_matrix)
-plt.figure(figsize=(70, 10))
-nx.draw(G, node_size=70, node_color='blue',
-        edge_color='gray', with_labels=True)
+plt.figure(figsize=(7, 10))
+nx.draw(G, node_size=20, node_color='blue',
+        edge_color='gray', with_labels=False)
 plt.show()

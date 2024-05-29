@@ -23,9 +23,12 @@ NodeContainer CreateNodes(int nodeNum);
 void SetupIPLayer(NodeContainer& nodes,
                   std::vector<std::vector<int>> topologyAsMatrix,
                   std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap);
+
 void InstallApplications(NodeContainer& nodes,
                          std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
-                         std::vector<std::vector<int>> senderSinkerAsMatrix);
+                         std::vector<std::vector<int>> senderSinkerAsMatrix,
+                         std::set<Ipv4Address>& sourceAddressSet,
+                         std::set<Ipv4Address>& sinkAddressSet);
 void installUdpEchoApplication(NodeContainer& nodes,
                                int sourceNodeIndex,
                                int sinkNodeIndex,
@@ -36,7 +39,10 @@ void installFTPApplication(NodeContainer& nodes,
                            int sinkNodeIndex,
                            Ipv4Address sinkNodeAddress,
                            int sinkPort);
-void OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor, Ptr<Ipv4FlowClassifier> flowmon);
+void OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
+                       Ptr<Ipv4FlowClassifier> flowmon,
+                       std::set<Ipv4Address>& sourceAddressSet,
+                       std::set<Ipv4Address>& sinkAddressSet);
 
 NS_LOG_COMPONENT_DEFINE("FirstScriptExample");
 
@@ -51,12 +57,19 @@ main(int argc, char* argv[])
 
     int nodeNum = topologyAsMatrix.size();
 
+    std::set<Ipv4Address> sourceAddressSet;
+    std::set<Ipv4Address> sinkAddressSet;
+
     ConfigureCommandLine(argc, argv);
     SetupLogging();
 
     NodeContainer nodes = CreateNodes(nodeNum);
     SetupIPLayer(nodes, topologyAsMatrix, nodeAddressHashMap);
-    InstallApplications(nodes, nodeAddressHashMap, senderSinkerAsMatrix);
+    InstallApplications(nodes,
+                        nodeAddressHashMap,
+                        senderSinkerAsMatrix,
+                        sourceAddressSet,
+                        sinkAddressSet);
 
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
@@ -73,7 +86,7 @@ main(int argc, char* argv[])
 
     Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon.GetClassifier());
 
-    OutputFlowMonitor(monitor, classifier);
+    OutputFlowMonitor(monitor, classifier, sourceAddressSet, sinkAddressSet);
 
     return 0;
 }
@@ -151,14 +164,18 @@ SetupIPLayer(NodeContainer& nodes,
 void
 InstallApplications(NodeContainer& nodes,
                     std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
-                    std::vector<std::vector<int>> senderSinkerAsMatrix)
+                    std::vector<std::vector<int>> senderSinkerAsMatrix,
+                    std::set<Ipv4Address>& sourceAddressSet,
+                    std::set<Ipv4Address>& sinkAddressSet)
 {
     NS_LOG_UNCOND("Install Application");
+
     for (int i = 0; i < senderSinkerAsMatrix.size(); i++)
     {
         int sourceNodeIndex = senderSinkerAsMatrix[i][0];
         int sinkNodeIndex = senderSinkerAsMatrix[i][1];
         Ipv4Address sinkNodeAddress = nodeAddressHashMap[sinkNodeIndex];
+        Ipv4Address sourceNodeAddress = nodeAddressHashMap[sourceNodeIndex];
 
         // 同じノードに複数のserverをinstallする可能性があり、port番号が被らないように、loopのindexをport番号とする。
         // 49152-65535 は動的に振り分けられるものとなっているので、こちらの範囲のportを用いる
@@ -166,9 +183,12 @@ InstallApplications(NodeContainer& nodes,
 
         installFTPApplication(nodes, sourceNodeIndex, sinkNodeIndex, sinkNodeAddress, sinkPort);
 
-        std::cout << "node[" << sourceNodeIndex << "] address"
-                  << nodeAddressHashMap[sourceNodeIndex] << ", send to send node[" << sinkNodeIndex
-                  << "], address " << sinkNodeAddress << std::endl;
+        std::cout << "node[" << sourceNodeIndex << "] address" << sourceNodeAddress
+                  << ", send to send node[" << sinkNodeIndex << "], address " << sinkNodeAddress
+                  << std::endl;
+
+        sinkAddressSet.insert(sinkNodeAddress);
+        sourceAddressSet.insert(sourceNodeAddress);
     }
 }
 
@@ -221,12 +241,18 @@ installFTPApplication(NodeContainer& nodes,
 }
 
 void
-OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor, Ptr<Ipv4FlowClassifier> classifier)
+OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
+                  Ptr<Ipv4FlowClassifier> classifier,
+                  std::set<Ipv4Address>& sourceAddressSet,
+                  std::set<Ipv4Address>& sinkAddressSet)
 {
     monitor->CheckForLostPackets();
     std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats();
 
     std::cout << "----------------------------------\n";
+
+    std::vector<uint64_t> values;
+    uint64_t sum = 0;
 
     for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin();
          i != stats.end();
@@ -234,19 +260,24 @@ OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor, Ptr<Ipv4FlowClassifier> classif
     {
         Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(i->first);
 
-        // if (t.sourceAddress == "10.1.56.1" && t.destinationAddress == "10.1.84.1")
-        // {
-        std::cout << "Flow " << i->first << " (" << t.sourceAddress << " -> "
-                  << t.destinationAddress << ")\n";
-        std::cout << "TroughPut: "
-                  << i->second.rxBytes * 8.0 /
-                         (i->second.timeLastRxPacket.GetSeconds() -
-                          i->second.timeFirstTxPacket.GetSeconds()) /
-                         1024
-                  << " Kbps\n";
-        std::cout << "----------------------------------\n";
-        // }
+        // client側 -> server側の通信のみcaptureする
+        if (sourceAddressSet.find(t.sourceAddress) != sourceAddressSet.end() &&
+            sinkAddressSet.find(t.destinationAddress) != sinkAddressSet.end())
+        {
+            std::cout << "Flow " << i->first << " (" << t.sourceAddress << " -> "
+                      << t.destinationAddress << ")\n";
+            uint64_t troughPut = i->second.rxBytes * 8.0 /
+                                 (i->second.timeLastRxPacket.GetSeconds() -
+                                  i->second.timeFirstTxPacket.GetSeconds()) /
+                                 1024;
+            std::cout << "TroughPut: " << troughPut << " Kbps\n";
+            std::cout << "----------------------------------\n";
+            values.push_back(troughPut);
+            sum += troughPut;
+        }
     }
+    uint64_t average = sum / values.size();
+    std::cout << "Average value: " << average << std::endl;
 }
 
 std::vector<std::vector<int>>
