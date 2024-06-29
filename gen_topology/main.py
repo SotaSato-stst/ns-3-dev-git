@@ -1,16 +1,18 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
+import csv
 import preferentialAttachment
 import calc
 
 # Parameters
-num_nodes = 200  # Total number of nodes in the graph
-M = 1           # Number of edges to attach from a new node to existing nodes
-alpha = 10  # Fraction of links that are updated
+num_nodes = 300  # Total number of nodes in the graph
+M = 2           # Number of edges to attach from a new node to existing nodes
+alpha = 0  # Fraction of links that are updated
 sourceSinkNum = 5
 leaf_pairs_csv_file_path = './data/leaf_pairs.csv'
 adjacency_matrix_csv_file_path = './data/adjacency_matrix.csv'
+clustering_coefficient_csv_file_path = './data/clustering_coefficient.csv'
 
 
 # Generate the preferential attachment graph
@@ -32,6 +34,13 @@ df.to_csv(adjacency_matrix_csv_file_path, index=False, header=False)
 
 # Print the path to the CSV file
 print(f"Adjacency matrix saved to {adjacency_matrix_csv_file_path}")
+
+# Save the clustering index to the CSV file
+network_clustering_coefficient = calc.calculate_clustering_coefficient(adj_matrix)
+# CSVファイルに書き込む
+with open(clustering_coefficient_csv_file_path, 'a', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow([num_nodes, alpha, network_clustering_coefficient])     # データ行
 
 # Optionally, visualize the graph
 G = nx.from_numpy_array(adj_matrix)
