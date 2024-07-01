@@ -13,6 +13,7 @@ using namespace ns3;
 #define FIRST_NO "0.0.0.1"
 #define SOURCE_TOPOLOGY_FILE_NAME "./data/adjacency_matrix.csv"
 #define SOURCE_SENDER_SINKER_FILE_NAME "./data/leaf_pairs.csv"
+#define THROUGHPUT_FINE_NAME "./data/through_put.csv"
 #define SIM_START 00.10
 #define SIM_STOP 10.10
 
@@ -39,7 +40,7 @@ void installFTPApplication(NodeContainer& nodes,
                            int sinkNodeIndex,
                            Ipv4Address sinkNodeAddress,
                            int sinkPort);
-void OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
+int OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
                        Ptr<Ipv4FlowClassifier> flowmon,
                        std::set<Ipv4Address>& sourceAddressSet,
                        std::set<Ipv4Address>& sinkAddressSet);
@@ -49,6 +50,14 @@ NS_LOG_COMPONENT_DEFINE("FirstScriptExample");
 int
 main(int argc, char* argv[])
 {
+
+    std::cerr << "Error: Could not open the file " << std::endl;
+    // Parse command line
+    int alpha = std::atoi(argv[1]);
+    int sinkSourceNum = std::atoi(argv[2]);
+    std::cerr << "Error: Could not open the file " << std::endl;
+
+
     std::string topologyFileName = SOURCE_TOPOLOGY_FILE_NAME;
     std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_NAME;
     std::vector<std::vector<int>> topologyAsMatrix = readMatrixFromCSV(topologyFileName);
@@ -86,7 +95,29 @@ main(int argc, char* argv[])
 
     Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon.GetClassifier());
 
-    OutputFlowMonitor(monitor, classifier, sourceAddressSet, sinkAddressSet);
+    int averageThroughput = OutputFlowMonitor(monitor, classifier, sourceAddressSet, sinkAddressSet);
+
+
+    std::string filename = THROUGHPUT_FINE_NAME;
+    std::vector<int> numbers = {alpha,sinkSourceNum,  averageThroughput};
+    std::ofstream file;
+    file.open(filename, std::ios::out | std::ios::app);
+
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open the file " << filename << std::endl;
+        return 0;
+    }
+
+    // 数値をCSV形式で書き込む
+    for (size_t i = 0; i < numbers.size(); ++i) {
+        file << numbers[i];
+        if (i < numbers.size() - 1) {
+            file << ",";
+        }
+    }
+    file << std::endl;
+
+    file.close();
 
     return 0;
 }
@@ -148,12 +179,12 @@ SetupIPLayer(NodeContainer& nodes,
                 address.SetBase(base, "255.255.255.0");
 
                 NetDeviceContainer devices = pointToPoint.Install(nodes.Get(i), nodes.Get(j));
-                std::cout << "topologyAsMatrix[" << i << "][" << j
-                          << "] = " << topologyAsMatrix[i][j] << std::endl;
+                // std::cout << "topologyAsMatrix[" << i << "][" << j
+                //           << "] = " << topologyAsMatrix[i][j] << std::endl;
 
                 Ipv4InterfaceContainer interface = address.Assign(devices);
-                std::cout << "node[" << i << "]address:" << interface.GetAddress(0, 0) << std::endl;
-                std::cout << "node[" << j << "]address:" << interface.GetAddress(1, 0) << std::endl;
+                // std::cout << "node[" << i << "]address:" << interface.GetAddress(0, 0) << std::endl;
+                // std::cout << "node[" << j << "]address:" << interface.GetAddress(1, 0) << std::endl;
                 nodeAddressHashMap[i] = interface.GetAddress(0, 0);
                 nodeAddressHashMap[j] = interface.GetAddress(1, 0);
             }
@@ -183,9 +214,9 @@ InstallApplications(NodeContainer& nodes,
 
         installFTPApplication(nodes, sourceNodeIndex, sinkNodeIndex, sinkNodeAddress, sinkPort);
 
-        std::cout << "node[" << sourceNodeIndex << "] address" << sourceNodeAddress
-                  << ", send to send node[" << sinkNodeIndex << "], address " << sinkNodeAddress
-                  << std::endl;
+        // std::cout << "node[" << sourceNodeIndex << "] address" << sourceNodeAddress
+        //           << ", send to send node[" << sinkNodeIndex << "], address " << sinkNodeAddress
+        //           << std::endl;
 
         sinkAddressSet.insert(sinkNodeAddress);
         sourceAddressSet.insert(sourceNodeAddress);
@@ -240,7 +271,7 @@ installFTPApplication(NodeContainer& nodes,
     sinkApp.Stop(Seconds(SIM_STOP - 0.10));
 }
 
-void
+int
 OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
                   Ptr<Ipv4FlowClassifier> classifier,
                   std::set<Ipv4Address>& sourceAddressSet,
@@ -276,8 +307,12 @@ OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
             sum += troughPut;
         }
     }
-    uint64_t average = sum / values.size();
+
+    // ファイルへの書き込み
+    int average = sum / values.size();
     std::cout << "Average value: " << average << std::endl;
+
+    return average;
 }
 
 std::vector<std::vector<int>>
