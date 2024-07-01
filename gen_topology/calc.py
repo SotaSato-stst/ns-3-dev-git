@@ -13,12 +13,12 @@ def calculate_clustering_coefficient(adj_matrix):
 
     n = len(symmetric_matrix)
     clustering_coefficients = []
-    print(symmetric_matrix)
+    # print(symmetric_matrix)
     for i in range(n):
         neighbors = np.where(symmetric_matrix[i] == 1)[0]
         k_i = len(neighbors)
 
-        print(neighbors)
+        # print(neighbors)
 
 
         if k_i < 2:

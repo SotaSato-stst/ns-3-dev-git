@@ -12,7 +12,7 @@ def generateGraph(num_nodes, M, alpha):
         probs = (degrees + (alpha * M)) / ((1 + alpha) * M * NodeNum)
         # 正規化
         total_probs = np.sum(probs)
-        print(total_probs)
+        # print(total_probs)
         probs = probs / total_probs
 
         existing_nodes = np.random.choice(

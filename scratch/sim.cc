@@ -11,9 +11,9 @@ using namespace ns3;
 
 #define NET_MASK "255.255.255.0"
 #define FIRST_NO "0.0.0.1"
-#define SOURCE_TOPOLOGY_FILE_NAME "./data/adjacency_matrix.csv"
-#define SOURCE_SENDER_SINKER_FILE_NAME "./data/leaf_pairs.csv"
-#define THROUGHPUT_FINE_NAME "./data/through_put.csv"
+#define SOURCE_TOPOLOGY_FILE_PATH "./data/adjacency_matrix/"
+#define SOURCE_SENDER_SINKER_FILE_PATH "./data/leaf_pairs/"
+#define THROUGHPUT_FINE_PATH "./data/average_throughput/"
 #define SIM_START 00.10
 #define SIM_STOP 10.10
 
@@ -50,16 +50,15 @@ NS_LOG_COMPONENT_DEFINE("FirstScriptExample");
 int
 main(int argc, char* argv[])
 {
-
-    std::cerr << "Error: Could not open the file " << std::endl;
     // Parse command line
-    int alpha = std::atoi(argv[1]);
-    int sinkSourceNum = std::atoi(argv[2]);
-    std::cerr << "Error: Could not open the file " << std::endl;
+    std::string fileName = argv[1];
+    int alpha = std::atoi(argv[2]);
+    int sinkSourceNum = std::atoi(argv[3]);
 
+    std::string topologyFileName = SOURCE_TOPOLOGY_FILE_PATH + fileName;
+    std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_PATH + fileName;
+    std::string throughputFileName = THROUGHPUT_FINE_PATH + fileName;
 
-    std::string topologyFileName = SOURCE_TOPOLOGY_FILE_NAME;
-    std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_NAME;
     std::vector<std::vector<int>> topologyAsMatrix = readMatrixFromCSV(topologyFileName);
     std::vector<std::vector<int>> senderSinkerAsMatrix = readMatrixFromCSV(senderSinkerFileName);
     std::unordered_map<std::int16_t, Ipv4Address> nodeAddressHashMap;
@@ -98,13 +97,12 @@ main(int argc, char* argv[])
     int averageThroughput = OutputFlowMonitor(monitor, classifier, sourceAddressSet, sinkAddressSet);
 
 
-    std::string filename = THROUGHPUT_FINE_NAME;
     std::vector<int> numbers = {alpha,sinkSourceNum,  averageThroughput};
     std::ofstream file;
-    file.open(filename, std::ios::out | std::ios::app);
+    file.open(throughputFileName, std::ios::out | std::ios::app);
 
     if (!file.is_open()) {
-        std::cerr << "Error: Could not open the file " << filename << std::endl;
+        std::cerr << "Error: Could not open the file " << throughputFileName << std::endl;
         return 0;
     }
 
