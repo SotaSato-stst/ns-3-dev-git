@@ -52,7 +52,7 @@ main(int argc, char* argv[])
 {
     // Parse command line
     std::string fileName = argv[1];
-    float alpha = std::atoi(argv[2]);
+    float alpha = std::atof(argv[2]);
     float sinkSourceNum = std::atoi(argv[3]);
 
     std::string topologyFileName = SOURCE_TOPOLOGY_FILE_PATH + fileName;
