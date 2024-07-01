@@ -52,8 +52,8 @@ main(int argc, char* argv[])
 {
     // Parse command line
     std::string fileName = argv[1];
-    int alpha = std::atoi(argv[2]);
-    int sinkSourceNum = std::atoi(argv[3]);
+    float alpha = std::atoi(argv[2]);
+    float sinkSourceNum = std::atoi(argv[3]);
 
     std::string topologyFileName = SOURCE_TOPOLOGY_FILE_PATH + fileName;
     std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_PATH + fileName;
@@ -94,10 +94,10 @@ main(int argc, char* argv[])
 
     Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon.GetClassifier());
 
-    int averageThroughput = OutputFlowMonitor(monitor, classifier, sourceAddressSet, sinkAddressSet);
+    float averageThroughput = OutputFlowMonitor(monitor, classifier, sourceAddressSet, sinkAddressSet);
 
 
-    std::vector<int> numbers = {alpha,sinkSourceNum,  averageThroughput};
+    std::vector<float> numbers = {alpha,sinkSourceNum,  averageThroughput};
     std::ofstream file;
     file.open(throughputFileName, std::ios::out | std::ios::app);
 

@@ -2,9 +2,9 @@ import subprocess
 from gen_topology import gen, calc, preferentialAttachment
 from datetime import datetime
 
-alphas = [10]
-sourceSinkNums = [1]
-loopCount = 1
+alphas = [0, 0.5, 10]
+sourceSinkNums = [1, 5 , 10]
+loopCount = 2
 
 def main():
     # 現在の日時を取得
