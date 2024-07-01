@@ -278,7 +278,7 @@ OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
     monitor->CheckForLostPackets();
     std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats();
 
-    std::cout << "----------------------------------\n";
+    // std::cout << "----------------------------------\n";
 
     std::vector<uint64_t> values;
     uint64_t sum = 0;
@@ -293,14 +293,14 @@ OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
         if (sourceAddressSet.find(t.sourceAddress) != sourceAddressSet.end() &&
             sinkAddressSet.find(t.destinationAddress) != sinkAddressSet.end())
         {
-            std::cout << "Flow " << i->first << " (" << t.sourceAddress << " -> "
-                      << t.destinationAddress << ")\n";
+            // std::cout << "Flow " << i->first << " (" << t.sourceAddress << " -> "
+            //           << t.destinationAddress << ")\n";
             uint64_t troughPut = i->second.rxBytes * 8.0 /
                                  (i->second.timeLastRxPacket.GetSeconds() -
                                   i->second.timeFirstTxPacket.GetSeconds()) /
                                  1024;
-            std::cout << "TroughPut: " << troughPut << " Kbps\n";
-            std::cout << "----------------------------------\n";
+            // std::cout << "TroughPut: " << troughPut << " Kbps\n";
+            // std::cout << "----------------------------------\n";
             values.push_back(troughPut);
             sum += troughPut;
         }
