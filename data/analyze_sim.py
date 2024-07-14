@@ -6,10 +6,11 @@ import numpy as np
 import analyze_eachnode_packet_process
 
 
-def execute(fileName, num_nodes):
+def execute(fileName, num_nodes, deleteFile=True):
     adjacent_matrix = np.genfromtxt(getAdjacencyMetrixPath(fileName), delimiter=',', dtype=float)
     plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes)
-    deleteFile(fileName)
+    if deleteFile:
+        deleteFile(fileName)
 
 def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes):
     node_counts = analyze_eachnode_packet_process.execute(getAsciiFIlePath(fileName), num_nodes)
@@ -55,4 +56,4 @@ def getAdjacencyMetrixPath(fileName):
     return './adjacency_matrix/' + fileName + '.csv'
 
 if __name__ == "__main__":
-    execute('20240714180313_alpha=0_sourceSinkNum5-0', 100)
+    execute('20240714180440_alpha=0_sourceSinkNum5-0', 100, False)
