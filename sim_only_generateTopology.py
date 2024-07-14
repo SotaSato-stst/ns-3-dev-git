@@ -4,7 +4,7 @@ from datetime import datetime
 import concurrent.futures
 # from joblib import Parallel, delayed
 
-alphas = [0, 0.5, 1.0, 10]
+alphas = [100]
 sourceSinkNums = [50]
 loopCount = 1
 
@@ -13,24 +13,16 @@ def main():
     now = datetime.now()
     # 指定されたフォーマットで日時をフォーマット
     formatted_time = now.strftime("%Y%m%d%H%M%S")
-    total_tasks = len(alphas) * len(sourceSinkNums) * loopCount
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = []
         for alpha in alphas:
             for sourceSinkNum in sourceSinkNums:
                 for i in range(loopCount):
                     fileName = genFileName(formatted_time, alpha, sourceSinkNum, i)
-                    futures.append(executor.submit(execute_simulation, alpha, sourceSinkNum, fileName))
-
-    completed_tasks = 0
-    for future in concurrent.futures.as_completed(futures):
-        result = future.result()
-        completed_tasks += 1
-        print(f"{result} | Completed {completed_tasks}/{total_tasks} tasks")
+                    execute_simulation(alpha, sourceSinkNum, fileName)
 
 def execute_simulation(alpha, sourceSinkNum, fileName):
-    gen.execute(alpha=alpha, sourceSinkNum=sourceSinkNum, fileName=fileName)
+    gen.execute(alpha=alpha, sourceSinkNum=sourceSinkNum, fileName=fileName, M=2, num_nodes=200)
     # subprocess.run(['./ns3', 'run', 'sim.cc', '--', fileName, str(alpha), str(sourceSinkNum)])
 
 def genFileName(time, alpha, sourceSinkNum, index):
