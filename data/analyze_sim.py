@@ -9,6 +9,7 @@ import analyze_eachnode_packet_process
 def execute(fileName, num_nodes):
     adjacent_matrix = np.genfromtxt(getAdjacencyMetrixPath(fileName), delimiter=',', dtype=float)
     plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes)
+    deleteFile(fileName)
 
 def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes):
     node_counts = analyze_eachnode_packet_process.execute(getAsciiFIlePath(fileName), num_nodes)
@@ -42,6 +43,9 @@ def plotNetworkWithWeigh(day, G, node_weights, node_weights_type):
     filepath = os.path.join(f"./output/networkplot/{day}", filename)
     plt.savefig(filepath)
     plt.close()
+
+def deleteFile(fileName):
+    os.remove(getAsciiFIlePath(fileName))
 
 
 def getAsciiFIlePath(fileName):
