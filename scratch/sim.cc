@@ -14,8 +14,11 @@ using namespace ns3;
 #define SOURCE_TOPOLOGY_FILE_PATH "./data/adjacency_matrix/"
 #define SOURCE_SENDER_SINKER_FILE_PATH "./data/leaf_pairs/"
 #define THROUGHPUT_FINE_PATH "./data/average_throughput/"
+#define ASCII_FINE_PATH "./data/ascii/"
 #define SIM_START 00.10
 #define SIM_STOP 10.10
+#define CSV_SUFFIX ".csv"
+#define ASCII_SUFFIX ".tr"
 
 std::vector<std::vector<int>> readMatrixFromCSV(const std::string& filename);
 void ConfigureCommandLine(int argc, char* argv[]);
@@ -23,7 +26,8 @@ void SetupLogging();
 NodeContainer CreateNodes(int nodeNum);
 void SetupIPLayer(NodeContainer& nodes,
                   std::vector<std::vector<int>> topologyAsMatrix,
-                  std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap);
+                  std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
+                  std::string asciiFIleName);
 
 void InstallApplications(NodeContainer& nodes,
                          std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
@@ -55,9 +59,10 @@ main(int argc, char* argv[])
     float alpha = std::atof(argv[2]);
     float sinkSourceNum = std::atoi(argv[3]);
 
-    std::string topologyFileName = SOURCE_TOPOLOGY_FILE_PATH + fileName;
-    std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_PATH + fileName;
-    std::string throughputFileName = THROUGHPUT_FINE_PATH + fileName;
+    std::string topologyFileName = SOURCE_TOPOLOGY_FILE_PATH + fileName + CSV_SUFFIX;
+    std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_PATH + fileName+ CSV_SUFFIX;
+    std::string throughputFileName = THROUGHPUT_FINE_PATH + fileName + CSV_SUFFIX;
+    std::string asciiFileName = ASCII_FINE_PATH + fileName + ASCII_SUFFIX;
 
     std::vector<std::vector<int>> topologyAsMatrix = readMatrixFromCSV(topologyFileName);
     std::vector<std::vector<int>> senderSinkerAsMatrix = readMatrixFromCSV(senderSinkerFileName);
@@ -72,7 +77,7 @@ main(int argc, char* argv[])
     SetupLogging();
 
     NodeContainer nodes = CreateNodes(nodeNum);
-    SetupIPLayer(nodes, topologyAsMatrix, nodeAddressHashMap);
+    SetupIPLayer(nodes, topologyAsMatrix, nodeAddressHashMap, asciiFileName);
     InstallApplications(nodes,
                         nodeAddressHashMap,
                         senderSinkerAsMatrix,
@@ -95,7 +100,6 @@ main(int argc, char* argv[])
     Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmon.GetClassifier());
 
     float averageThroughput = OutputFlowMonitor(monitor, classifier, sourceAddressSet, sinkAddressSet);
-
 
     std::vector<float> numbers = {alpha,sinkSourceNum,  averageThroughput};
     std::ofstream file;
@@ -148,7 +152,8 @@ CreateNodes(int nodeNum)
 void
 SetupIPLayer(NodeContainer& nodes,
              std::vector<std::vector<int>> topologyAsMatrix,
-             std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap)
+             std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
+             std::string asciiFileName)
 {
     NS_LOG_UNCOND("Setup IP");
     // Linkの設定
@@ -188,6 +193,9 @@ SetupIPLayer(NodeContainer& nodes,
             }
         }
     }
+
+    AsciiTraceHelper ascii;
+    pointToPoint.EnableAsciiAll(ascii.CreateFileStream(asciiFileName));
 }
 
 void
@@ -306,7 +314,7 @@ OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
         }
     }
 
-    // ファイルへの書き込み
+    // 標準出力へoutput
     int average = sum / values.size();
     std::cout << "Average value: " << average << std::endl;
 

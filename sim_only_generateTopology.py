@@ -23,7 +23,6 @@ def main():
 
 def execute_simulation(alpha, sourceSinkNum, fileName):
     gen.execute(alpha=alpha, sourceSinkNum=sourceSinkNum, fileName=fileName, M=2, num_nodes=200)
-    # subprocess.run(['./ns3', 'run', 'sim.cc', '--', fileName, str(alpha), str(sourceSinkNum)])
 
 def genFileName(time, alpha, sourceSinkNum, index):
     return time + "_" + "alpha=" + str(alpha) + "_" + "sourceSinkNum" + str(sourceSinkNum) + "-" + str(index) + ".csv"

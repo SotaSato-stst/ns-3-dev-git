@@ -2,10 +2,12 @@ import subprocess
 from gen_topology import gen
 from datetime import datetime
 import concurrent.futures
+from data import analyze_sim
 # from joblib import Parallel, delayed
 
-alphas = [0, 0.5, 1.0, 10]
-sourceSinkNums = [50]
+alphas = [0]
+sourceSinkNums = [5]
+num_nodes = 100
 loopCount = 1
 
 def main():
@@ -30,13 +32,25 @@ def main():
         print(f"{result} | Completed {completed_tasks}/{total_tasks} tasks")
 
 def execute_simulation(alpha, sourceSinkNum, fileName):
-    gen.execute(alpha=alpha, sourceSinkNum=sourceSinkNum, fileName=fileName)
-    # subprocess.run(['./ns3', 'run', 'sim.cc', '--', fileName, str(alpha), str(sourceSinkNum)])
+    gen.execute(alpha=alpha, sourceSinkNum=sourceSinkNum, num_nodes=num_nodes, fileName=fileName+".csv")
+    subprocess.run(['./ns3', 'run', 'sim.cc', '--', fileName, str(alpha), str(sourceSinkNum)])
+    analyze_sim.execute(fileName, num_nodes)
 
 def genFileName(time, alpha, sourceSinkNum, index):
-    return time + "_" + "alpha=" + str(alpha) + "_" + "sourceSinkNum" + str(sourceSinkNum) + "-" + str(index) + ".csv"
+    return time + "_" + "alpha=" + str(alpha) + "_" + "sourceSinkNum" + str(sourceSinkNum) + "-" + str(index)
+
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
 
     # for alpha in alphas:
     #     for sourceSinkNum in sourceSinkNums:

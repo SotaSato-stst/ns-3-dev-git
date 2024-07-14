@@ -53,6 +53,7 @@ def execute(num_nodes = 100, M =  1, alpha = 0, sourceSinkNum = 5, fileName="sam
         filepath = os.path.join("./data", filename)
         plt.savefig(filepath)
         plt.close()
+    return adj_matrix
 
 # Parameters
 num_nodes = 100  # Total number of nodes in the graph
