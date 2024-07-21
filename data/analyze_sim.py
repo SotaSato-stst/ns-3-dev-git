@@ -1,34 +1,48 @@
 import networkx as nx
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-# from . import analyze_eachnode_packet_process
-import analyze_eachnode_packet_process
+from . import analyze_eachnode_packet_process
+# import analyze_eachnode_packet_process
+import time
 
 
-def execute(fileName, num_nodes, deleteFile=True):
+def execute(fileName, num_nodes, isDeleteFile=True):
     adjacent_matrix = np.genfromtxt(getAdjacencyMetrixPath(fileName), delimiter=',', dtype=float)
     plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes)
-    if deleteFile:
+    if isDeleteFile:
         deleteFile(fileName)
 
 def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes):
     node_counts = analyze_eachnode_packet_process.execute(getAsciiFIlePath(fileName), num_nodes)
     G = nx.from_numpy_array(adjacent_matrix)
     betweenness_centrality = nx.betweenness_centrality(G).values()
-    os.makedirs(f"./output/networkplot/{fileName}", exist_ok=True)
+    os.makedirs(f"./data/output/networkplot/{fileName}", exist_ok=True)
+    os.makedirs(f"./data/output/scatter/{fileName}", exist_ok=True)
+    noderank = list(range(num_nodes))
 
     enqueue_counts = [node_counts[key][0] for key in node_counts]
     plotNetworkWithWeigh(fileName, G, enqueue_counts, "enqueue_counts")
+    plotScatter(fileName, noderank, sorted(enqueue_counts, reverse=True), "NodeRank", "Count", "enqueue_counts", "enqueue_counts")
+
     dequeue_counts = [node_counts[key][1] for key in node_counts]
     plotNetworkWithWeigh(fileName, G, dequeue_counts, "dequeue_counts")
+    plotScatter(fileName, noderank, sorted(dequeue_counts, reverse=True), "NodeRank", "Count", "dequeue_counts", "dequeue_counts")
+
     loss_counts = [node_counts[key][2] for key in node_counts]
     plotNetworkWithWeigh(fileName, G, loss_counts, "loss_counts")
+    plotScatter(fileName, noderank, sorted(loss_counts, reverse=True), "NodeRank", "Count", "loss_counts", "loss_counts")
+
     receive_counts = [node_counts[key][3] for key in node_counts]
     plotNetworkWithWeigh(fileName, G, receive_counts, "receive_counts")
-    plotNetworkWithWeigh(fileName, G, betweenness_centrality, "betweenness_centrality")
+    plotScatter(fileName, noderank, sorted(receive_counts, reverse=True), "NodeRank", "Count", "receive_counts", "receive_counts")
 
-def plotNetworkWithWeigh(day, G, node_weights, node_weights_type):
+    plotNetworkWithWeigh(fileName, G, betweenness_centrality, "betweenness_centrality")
+    plotScatter(fileName, noderank, sorted(betweenness_centrality, reverse=True), "NodeRank", "Count", "betweenness_centrality", "betweenness_centrality")
+
+def plotNetworkWithWeigh(metadata, G, node_weights, node_weights_type):
     cmap = plt.get_cmap('cool')  # 例として'cool'カラーマップを使用
 
     # 各ノードの色を大きさに応じて設定する
@@ -41,7 +55,21 @@ def plotNetworkWithWeigh(day, G, node_weights, node_weights_type):
     nx.draw(G, edge_color='gray', node_color=node_colors, node_size=40, with_labels=False)
 
     filename = f'{node_weights_type}.png'
-    filepath = os.path.join(f"./output/networkplot/{day}", filename)
+    filepath = os.path.join(f"./data/output/networkplot/{metadata}", filename)
+    plt.savefig(filepath)
+    plt.close()
+
+def plotScatter(metadata, x, y, x_label, y_label, scatterType, title="scatter"):
+    # 散布図を描画する
+    plt.scatter(x, y, s=10)
+
+    # グラフのタイトルと軸ラベルを設定する
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.ylim(0, 100000)
+    filename = f'{scatterType}.png'
+    filepath = os.path.join(f"./data/output/scatter/{metadata}", filename)
     plt.savefig(filepath)
     plt.close()
 
@@ -50,10 +78,10 @@ def deleteFile(fileName):
 
 
 def getAsciiFIlePath(fileName):
-    return './ascii/' + fileName + '.tr'
+    return './data/ascii/' + fileName + '.tr'
 
 def getAdjacencyMetrixPath(fileName):
-    return './adjacency_matrix/' + fileName + '.csv'
+    return './data/adjacency_matrix/' + fileName + '.csv'
 
 if __name__ == "__main__":
-    execute('20240714180440_alpha=0_sourceSinkNum5-0', 100, False)
+    execute('20240715195202_alpha=0_sourceSinkNum5-0', 100, isDeleteFile=False)

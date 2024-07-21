@@ -159,6 +159,8 @@ SetupIPLayer(NodeContainer& nodes,
     // Linkの設定
     std::vector<NetDeviceContainer> devices;
     PointToPointHelper pointToPoint;
+    pointToPoint.SetQueue("ns3::DropTailQueue",
+             "MaxSize", StringValue("10p"));
     pointToPoint.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
     pointToPoint.SetChannelAttribute("Delay", StringValue("2ms"));
 
