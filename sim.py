@@ -5,9 +5,9 @@ import concurrent.futures
 from data import analyze_sim
 # from joblib import Parallel, delayed
 
-alphas = [0, 100]
-sourceSinkNums = [300]
-num_nodes = 255
+alphas = [0]
+sourceSinkNums = [50]
+num_nodes = 100
 loopCount = 1
 
 def main():
