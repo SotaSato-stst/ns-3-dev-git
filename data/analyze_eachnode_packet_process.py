@@ -12,12 +12,14 @@ def execute(filename, NodeNum=100):
 
             if line.startswith('+'):
                 node_counts[nodeIndex][0] += 1
+                node_counts[nodeIndex][2] += 1
 
             if line.startswith('-'):
                 node_counts[nodeIndex][1] += 1
+                node_counts[nodeIndex][2] -= 1
 
             if line.startswith('d'):
-                node_counts[nodeIndex][2] += 1
+                print("detect drop packet")
 
             if line.startswith('r'):
                 node_counts[nodeIndex][3] += 1

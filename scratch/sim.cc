@@ -27,7 +27,8 @@ NodeContainer CreateNodes(int nodeNum);
 void SetupIPLayer(NodeContainer& nodes,
                   std::vector<std::vector<int>> topologyAsMatrix,
                   std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
-                  std::string asciiFIleName);
+                  std::string asciiFIleName,
+                  std::string bandWidth);
 
 void InstallApplications(NodeContainer& nodes,
                          std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
@@ -58,6 +59,7 @@ main(int argc, char* argv[])
     std::string fileName = argv[1];
     float alpha = std::atof(argv[2]);
     float sinkSourceNum = std::atoi(argv[3]);
+    std::string bandWidth = argv[4];
 
     std::string topologyFileName = SOURCE_TOPOLOGY_FILE_PATH + fileName + CSV_SUFFIX;
     std::string senderSinkerFileName = SOURCE_SENDER_SINKER_FILE_PATH + fileName+ CSV_SUFFIX;
@@ -77,7 +79,7 @@ main(int argc, char* argv[])
     SetupLogging();
 
     NodeContainer nodes = CreateNodes(nodeNum);
-    SetupIPLayer(nodes, topologyAsMatrix, nodeAddressHashMap, asciiFileName);
+    SetupIPLayer(nodes, topologyAsMatrix, nodeAddressHashMap, asciiFileName, bandWidth);
     InstallApplications(nodes,
                         nodeAddressHashMap,
                         senderSinkerAsMatrix,
@@ -93,6 +95,7 @@ main(int argc, char* argv[])
     flowmon.SetMonitorAttribute("PacketSizeBinWidth", ns3::DoubleValue(0.001));
     Ptr<FlowMonitor> monitor = flowmon.InstallAll();
 
+    NS_LOG_UNCOND("Start Simulation");
     Simulator::Stop(Seconds(SIM_STOP));
     Simulator::Run();
     Simulator::Destroy();
@@ -153,7 +156,8 @@ void
 SetupIPLayer(NodeContainer& nodes,
              std::vector<std::vector<int>> topologyAsMatrix,
              std::unordered_map<std::int16_t, Ipv4Address>& nodeAddressHashMap,
-             std::string asciiFileName)
+             std::string asciiFileName,
+             std::string bandWidth)
 {
     NS_LOG_UNCOND("Setup IP");
     // Linkの設定
@@ -161,7 +165,7 @@ SetupIPLayer(NodeContainer& nodes,
     PointToPointHelper pointToPoint;
     pointToPoint.SetQueue("ns3::DropTailQueue",
              "MaxSize", StringValue("10p"));
-    pointToPoint.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
+    pointToPoint.SetDeviceAttribute("DataRate", StringValue(bandWidth));
     pointToPoint.SetChannelAttribute("Delay", StringValue("2ms"));
 
     // IPの設定
@@ -247,8 +251,6 @@ installUdpEchoApplication(NodeContainer& nodes,
     // source serverの準備。
     // 宛先などをセットアップ
     UdpEchoClientHelper echoClient(sinkNodeAddress, sinkPort);
-    echoClient.SetAttribute("MaxPackets", UintegerValue(2));
-    echoClient.SetAttribute("Interval", TimeValue(Seconds(2.0)));
     echoClient.SetAttribute("PacketSize", UintegerValue(1024));
     ApplicationContainer sourceApp = echoClient.Install(nodes.Get(sourceNodeIndex));
     sourceApp.Start(Seconds(SIM_START + 0.10));

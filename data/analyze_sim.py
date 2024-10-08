@@ -67,7 +67,7 @@ def plotScatter(metadata, x, y, x_label, y_label, scatterType, title="scatter"):
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.ylim(0, 100000)
+    plt.ylim(0, 1000)
     filename = f'{scatterType}.png'
     filepath = os.path.join(f"./data/output/scatter/{metadata}", filename)
     plt.savefig(filepath)

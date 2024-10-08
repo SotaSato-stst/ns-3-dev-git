@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 // -----------------IPの設定-------------------
     // 左側のホストと左ルータを接続
     PointToPointHelper hostRouterP2P;
-    hostRouterP2P.SetDeviceAttribute("DataRate", StringValue("1Gbps"));
+    hostRouterP2P.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
     hostRouterP2P.SetChannelAttribute("Delay", StringValue("1ms"));
 
     NetDeviceContainer leftDevices1, leftDevices2;
@@ -46,8 +46,8 @@ int main(int argc, char *argv[]) {
 
     // ルータ間を接続
     PointToPointHelper routersP2P;
-    routersP2P.SetDeviceAttribute("DataRate", StringValue("1000bps"));
-    routersP2P.SetChannelAttribute("Delay", StringValue("1s"));
+    routersP2P.SetDeviceAttribute("DataRate", StringValue("5Mbps"));
+    routersP2P.SetChannelAttribute("Delay", StringValue("1ms"));
 
     NetDeviceContainer routerDevices;
     routerDevices = routersP2P.Install(routers.Get(0), routers.Get(1));
@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
     hostRouterP2P.EnableAsciiAll(ascii.CreateFileStream("host.tr"));
     routersP2P.EnableAsciiAll(ascii.CreateFileStream("router.tr"));
     // パケットロスを設定
-    Ptr<RateErrorModel> em = CreateObject<RateErrorModel>();
-    em->SetAttribute("ErrorRate", DoubleValue(0.01));  // パケットロス率 1%
-    routerDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em));
+    // Ptr<RateErrorModel> em = CreateObject<RateErrorModel>();
+    // em->SetAttribute("ErrorRate", DoubleValue(0.01));  // パケットロス率 1%
+    // routerDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em));
 // 送信パケットのコールバック
     // Ptr<PacketLossCounter> packetLossCounter = CreateObject<PacketLossCounter> ();
 
@@ -108,14 +108,14 @@ int main(int argc, char *argv[]) {
     // バルクセンド（クライアント側）
     BulkSendHelper bulkSendHelper1("ns3::TcpSocketFactory",
                                   InetSocketAddress(rightInterfaces1.GetAddress(0), port));
-    bulkSendHelper1.SetAttribute("MaxBytes", UintegerValue(0));  // 無制限
+    bulkSendHelper1.SetAttribute("MaxBytes", UintegerValue(5 * 1024 * 1024));  // 無制限
     ApplicationContainer clientApps1 = bulkSendHelper1.Install(leftNodes.Get(0));
     clientApps1.Start(Seconds(1.0));
     clientApps1.Stop(Seconds(STOP_SIM));
 
     BulkSendHelper bulkSendHelper2("ns3::TcpSocketFactory",
                                   InetSocketAddress(rightInterfaces2.GetAddress(0), port));
-    bulkSendHelper2.SetAttribute("MaxBytes", UintegerValue(0));  // 無制限
+    bulkSendHelper2.SetAttribute("MaxBytes", UintegerValue(5 * 1024 * 1024));  // 無制限
     ApplicationContainer clientApps2 = bulkSendHelper2.Install(leftNodes.Get(1));
     clientApps2.Start(Seconds(1.0));
     clientApps2.Stop(Seconds(STOP_SIM));
@@ -148,8 +148,9 @@ int main(int argc, char *argv[]) {
         std::cout << "Source: " << t.sourceAddress << " bps\n";
         uint64_t troughPut = i->second.rxBytes * 8.0 /
                                  (i->second.timeLastRxPacket.GetSeconds() -
-                                  i->second.timeFirstTxPacket.GetSeconds());
-        std::cout << "TroughPut: " << troughPut << " bps\n";
+                                  i->second.timeFirstTxPacket.GetSeconds()) /
+                                 1024;
+        std::cout << "TroughPut: " << troughPut << " Kbps\n";
         std::cout << "LostPacket: " << i->second.lostPackets << " bps\n";
     }
     return 0;
