@@ -78,10 +78,10 @@ def deleteFile(fileName):
 
 
 def getAsciiFIlePath(fileName):
-    return './data/ascii/' + fileName + '.tr'
+    return './data/raw/ascii/' + fileName + '.tr'
 
 def getAdjacencyMetrixPath(fileName):
-    return './data/adjacency_matrix/' + fileName + '.csv'
+    return './data/topology_data/adjacency_matrix/' + fileName + '.csv'
 
 if __name__ == "__main__":
     execute('20240715195202_alpha=0_sourceSinkNum5-0', 100, isDeleteFile=False)

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # ディレクトリのパス
-directory = './average_throughput'
+directory = './result/average_throughput'
 
 def main():
     filename = latestFileName()

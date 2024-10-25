@@ -6,9 +6,9 @@ from . import calc
 from . import preferentialAttachment
 import os
 sourceSinkNum = 5
-leaf_pairs_csv_file_path = './data/leaf_pairs/'
-adjacency_matrix_csv_file_path = './data/adjacency_matrix/'
-clustering_coefficient_csv_file_path = './data/clustering_coefficient/'
+leaf_pairs_csv_file_path = './data/topology_data/leaf_pairs/'
+adjacency_matrix_csv_file_path = './data/topology_data/adjacency_matrix/'
+clustering_coefficient_csv_file_path = './data/topology_data/clustering_coefficient/'
 
 # Parameters
 # num_nodes = 100  # Total number of nodes in the graph

@@ -11,10 +11,10 @@ using namespace ns3;
 
 #define NET_MASK "255.255.255.0"
 #define FIRST_NO "0.0.0.1"
-#define SOURCE_TOPOLOGY_FILE_PATH "./data/adjacency_matrix/"
-#define SOURCE_SENDER_SINKER_FILE_PATH "./data/leaf_pairs/"
-#define THROUGHPUT_FINE_PATH "./data/average_throughput/"
-#define ASCII_FINE_PATH "./data/ascii/"
+#define SOURCE_TOPOLOGY_FILE_PATH "./data/topology_data/adjacency_matrix/"
+#define SOURCE_SENDER_SINKER_FILE_PATH "./data/topology_data/leaf_pairs/"
+#define THROUGHPUT_FINE_PATH "./data/result/average_throughput/"
+#define ASCII_FINE_PATH "./data/raw/ascii/"
 #define SIM_START 00.10
 #define SIM_STOP 10.10
 #define CSV_SUFFIX ".csv"
