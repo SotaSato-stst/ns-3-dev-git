@@ -6,8 +6,9 @@ import os
 import numpy as np
 from . import analyze_eachnode_packet_process
 # import analyze_eachnode_packet_process
-import time
+import csv
 
+packet_info_result_dir_path = './data/result/packet_info/'
 
 def execute(fileName, num_nodes, isDeleteFile=True):
     adjacent_matrix = np.genfromtxt(getAdjacencyMetrixPath(fileName), delimiter=',', dtype=float)
@@ -41,6 +42,16 @@ def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes):
 
     plotNetworkWithWeigh(fileName, G, betweenness_centrality, "betweenness_centrality")
     plotScatter(fileName, noderank, sorted(betweenness_centrality, reverse=True), "NodeRank", "Count", "betweenness_centrality", "betweenness_centrality")
+
+    total_enqueue_counts = sum(enqueue_counts)
+    total_dequeue_counts = sum(dequeue_counts)
+    total_loss_counts = sum(loss_counts)
+    total_receive_counts = sum(receive_counts)
+    packet_loss_rate = total_loss_counts / total_enqueue_counts
+
+    with open(packet_info_result_dir_path + fileName, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([total_enqueue_counts, total_dequeue_counts, total_loss_counts, total_receive_counts, packet_loss_rate])
 
 def plotNetworkWithWeigh(metadata, G, node_weights, node_weights_type):
     cmap = plt.get_cmap('cool')  # 例として'cool'カラーマップを使用
