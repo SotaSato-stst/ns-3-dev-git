@@ -57,3 +57,4 @@ vcpkg/
 
 data/*
 !data/*.py
+sim-variable.yml

@@ -74,7 +74,7 @@ def latestFileName():
 
         # ファイル名から数値部分を抽出（.csvを取り除いた後の部分）
         try:
-            number_part = int(filename[:-4])  # .csvの分を取り除く
+            number_part = int(filename[13:])  # .csvの分を取り除く
         except ValueError:
             continue  # 数値に変換できない場合はスキップ
 
