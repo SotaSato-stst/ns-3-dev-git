@@ -20,7 +20,7 @@ def execute(num_nodes = 100, M =  1, alpha = 0, sourceSinkNum = 5, fileName="sam
 
     # Find 3 pairs of leaf nodes
     leaf_pairs = calc.find_leaf_pairs(G, num_pairs=sourceSinkNum)
-
+    print(len(leaf_pairs))
     # Save the leaf pairs to a CSV file
     leaf_pairs_df = pd.DataFrame(leaf_pairs)
     leaf_pairs_df.to_csv(leaf_pairs_csv_file_path + fileName, index=False, header=False)

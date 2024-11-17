@@ -1,0 +1,7 @@
+alphas:
+  - 1000
+sourceSinkNums:
+  - 50000
+num_nodes: 200
+loopCount: 10
+bandWidth: 100Kbps

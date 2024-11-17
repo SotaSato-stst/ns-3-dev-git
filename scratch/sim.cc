@@ -309,8 +309,7 @@ OutputFlowMonitor(Ptr<ns3::FlowMonitor> monitor,
             //           << t.destinationAddress << ")\n";
             uint64_t troughPut = i->second.rxBytes * 8.0 /
                                  (i->second.timeLastRxPacket.GetSeconds() -
-                                  i->second.timeFirstTxPacket.GetSeconds()) /
-                                 1024;
+                                  i->second.timeFirstTxPacket.GetSeconds());
             // std::cout << "TroughPut: " << troughPut << " Kbps\n";
             // std::cout << "----------------------------------\n";
             values.push_back(troughPut);

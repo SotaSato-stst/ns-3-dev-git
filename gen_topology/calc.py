@@ -1,12 +1,17 @@
 import itertools
 import random
 import numpy as np
+import math
 
 def find_leaf_pairs(G, num_pairs=3):
     leaves = [node for node, degree in G.degree() if degree == 1]
     leaf_pairs = list(itertools.combinations(leaves, 2))
-    random.shuffle(leaf_pairs)
-    return leaf_pairs[:num_pairs]
+    pairs_for_random = leaf_pairs.copy()
+    for _ in range(math.ceil(num_pairs / len(leaf_pairs)) -1):
+        pairs_for_random = pairs_for_random + leaf_pairs.copy()
+    print(len(pairs_for_random))
+    random.shuffle(pairs_for_random)
+    return pairs_for_random[:num_pairs]
 
 def calculate_clustering_coefficient(adj_matrix):
     symmetric_matrix = make_symmetric(adj_matrix)
