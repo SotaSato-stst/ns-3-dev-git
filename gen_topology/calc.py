@@ -3,8 +3,9 @@ import random
 import numpy as np
 import math
 
-def find_leaf_pairs(G, num_pairs=3):
-    leaves = [node for node, degree in G.degree() if degree == 1]
+# minimumDegreeが1のときは、leaf nodeのみを返す
+def find_leaf_pairs(G, minimumDegree=1, num_pairs=3):
+    leaves = [node for node, degree in G.degree() if degree == minimumDegree]
     leaf_pairs = list(itertools.combinations(leaves, 2))
     pairs_for_random = leaf_pairs.copy()
     for _ in range(math.ceil(num_pairs / len(leaf_pairs)) -1):

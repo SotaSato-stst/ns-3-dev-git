@@ -14,12 +14,12 @@ clustering_coefficient_csv_file_path = './data/topology_data/clustering_coeffici
 # num_nodes = 100  # Total number of nodes in the graph
 # M =  1           # Number of edges to attach from a new node to existing nodes
 # alpha = 0  # Fraction of links that are updated
-def execute(num_nodes = 100, M =  1, alpha = 0, sourceSinkNum = 5, fileName="sample.csv", isVisualizeGraph=False):
+def execute(num_nodes = 100, M = 1, alpha = 0, sourceSinkNum = 5, fileName="sample.csv", isVisualizeGraph=False):
     # Generate the preferential attachment graph
     G, adj_matrix = preferentialAttachment.generateGraph(num_nodes, M, alpha)
 
     # Find 3 pairs of leaf nodes
-    leaf_pairs = calc.find_leaf_pairs(G, num_pairs=sourceSinkNum)
+    leaf_pairs = calc.find_leaf_pairs(G, minimumDegree=M, num_pairs=sourceSinkNum)
     print(len(leaf_pairs))
     # Save the leaf pairs to a CSV file
     leaf_pairs_df = pd.DataFrame(leaf_pairs)

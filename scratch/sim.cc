@@ -176,17 +176,17 @@ SetupIPLayer(NodeContainer& nodes,
     // リンクとIPをinstallする
     for (size_t i = 0; i < topologyAsMatrix.size(); ++i)
     {
+        Ipv4AddressHelper address;
+        // ネットワーク部をそれぞれのデバイスごとに振り分ける。
+        std::string ipAddress = "10.1." + std::to_string(i + 1) + ".0";
+        const char* ipAddressStr = ipAddress.c_str();
+        Ipv4Address base(ipAddressStr);
+        address.SetBase(base, "255.255.255.0");
+
         for (size_t j = 0; j < topologyAsMatrix[i].size(); ++j)
         {
             if (topologyAsMatrix[i][j] == 1)
             {
-                Ipv4AddressHelper address;
-                // ネットワーク部をそれぞれのデバイスごとに振り分ける。
-                std::string ipAddress = "10.1." + std::to_string(i + 1) + ".0";
-                const char* ipAddressStr = ipAddress.c_str();
-                Ipv4Address base(ipAddressStr);
-                address.SetBase(base, "255.255.255.0");
-
                 NetDeviceContainer devices = pointToPoint.Install(nodes.Get(i), nodes.Get(j));
                 // std::cout << "topologyAsMatrix[" << i << "][" << j
                 //           << "] = " << topologyAsMatrix[i][j] << std::endl;
