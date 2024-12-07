@@ -212,8 +212,9 @@ InstallApplications(NodeContainer& nodes,
                     std::set<Ipv4Address>& sinkAddressSet)
 {
     NS_LOG_UNCOND("Install Application");
+    int size = senderSinkerAsMatrix.size();
 
-    for (int i = 0; i < senderSinkerAsMatrix.size(); i++)
+    for (int i = 0; i < size; i++)
     {
         int sourceNodeIndex = senderSinkerAsMatrix[i][0];
         int sinkNodeIndex = senderSinkerAsMatrix[i][1];

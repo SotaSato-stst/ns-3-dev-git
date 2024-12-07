@@ -15,9 +15,7 @@ def main():
     loopCount = yamlData.get('loopCount')
     bandWidth = yamlData.get('bandWidth')
 
-    # 現在の日時を取得
     now = datetime.now()
-    # 指定されたフォーマットで日時をフォーマット
     formatted_time = now.strftime("%Y%m%d%H%M%S")
     total_tasks = len(alphas) * len(sourceSinkNums) * loopCount
 
@@ -37,7 +35,7 @@ def main():
 def execute_simulation(alpha, linkNumsForEachStep, sourceSinkNum, fileName, num_nodes, bandWidth):
     gen.execute(alpha=alpha, M=linkNumsForEachStep,sourceSinkNum=sourceSinkNum, num_nodes=num_nodes, fileName=fileName+".csv")
     subprocess.run(['./ns3', 'run', 'sim.cc', '--', fileName, str(alpha), str(sourceSinkNum), str(bandWidth)])
-    analyze_sim.execute(fileName, num_nodes)
+    analyze_sim.execute(fileName, num_nodes, alpha=alpha, sourceSinkNum=sourceSinkNum)
 
 def genFileName(time, alpha, linkNumsForEachStep, sourceSinkNum, yamlData, index):
     def getString(_str, value=None):

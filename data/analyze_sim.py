@@ -10,13 +10,13 @@ import csv
 
 packet_info_result_dir_path = './data/result/packet_info/'
 
-def execute(fileName, num_nodes, isDeleteFile=True):
+def execute(fileName, num_nodes, alpha, sourceSinkNum, isDeleteFile=True):
     adjacent_matrix = np.genfromtxt(getAdjacencyMetrixPath(fileName), delimiter=',', dtype=float)
-    plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes)
+    plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes, alpha, sourceSinkNum)
     if isDeleteFile:
         deleteFile(fileName)
 
-def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes):
+def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes, alpha, sourceSinkNum):
     node_counts = analyze_eachnode_packet_process.execute(getAsciiFIlePath(fileName), num_nodes)
     G = nx.from_numpy_array(adjacent_matrix)
     betweenness_centrality = nx.betweenness_centrality(G).values()
@@ -49,9 +49,9 @@ def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes):
     total_receive_counts = sum(receive_counts)
     packet_loss_rate = total_loss_counts / total_enqueue_counts
 
-    with open(packet_info_result_dir_path + fileName, mode='w', newline='') as file:
+    with open(packet_info_result_dir_path + fileName + ".csv", mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow([total_enqueue_counts, total_dequeue_counts, total_loss_counts, total_receive_counts, packet_loss_rate])
+        writer.writerow([alpha, sourceSinkNum, total_enqueue_counts, total_dequeue_counts, total_loss_counts, total_receive_counts, packet_loss_rate])
 
 def plotNetworkWithWeigh(metadata, G, node_weights, node_weights_type):
     cmap = plt.get_cmap('cool')  # 例として'cool'カラーマップを使用

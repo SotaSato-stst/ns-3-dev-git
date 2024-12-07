@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os
 
 # ディレクトリのパス
-directory = './result/average_throughput'
+directory = './result/merged_csv/merged.csv'
 
 def main():
     filename = latestFileName()
