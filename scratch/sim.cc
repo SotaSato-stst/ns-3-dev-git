@@ -200,8 +200,8 @@ SetupIPLayer(NodeContainer& nodes,
         }
     }
 
-    AsciiTraceHelper ascii;
-    pointToPoint.EnableAsciiAll(ascii.CreateFileStream(asciiFileName));
+    // AsciiTraceHelper ascii;
+    // pointToPoint.EnableAsciiAll(ascii.CreateFileStream(asciiFileName));
 }
 
 void

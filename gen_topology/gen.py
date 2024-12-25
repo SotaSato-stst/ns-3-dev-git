@@ -47,7 +47,7 @@ def execute(num_nodes = 100, M = 1, alpha = 0, sourceSinkNum = 5, fileName="samp
         G = nx.from_numpy_array(adj_matrix)
         plt.figure(figsize=(7, 10))
         nx.draw(G, node_size=20, node_color='blue',
-                edge_color='gray', with_labels=False)
+                edge_color='gray', with_labels=True)
 
         filename = f'topology_{alpha}.png'
         filepath = os.path.join("./data", filename)

@@ -11,6 +11,6 @@ def merge_csv_files(directory, output_file):
                 outfile.write(infile.read().strip() + '\n')
 
 # 使用例
-directory_path = './result/merged_csv'
+directory_path = './result/average_throughput'
 output_file = './result/merged_csv/merged.csv'
 merge_csv_files(directory_path, output_file)

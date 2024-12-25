@@ -1,8 +1,16 @@
 alphas:
-  - 1000
+  - 0
+  - 0.1
+  - 0.3
+  - 0.6
+  - 1
+  - 1.5
+  - 3
+  - 6
+  - 10
 sourceSinkNums:
   - 50
-linkNumsForEachStep: 2
+linkNumsForEachStep: 
 num_nodes: 200
 loopCount: 1
 bandWidth: 100Kbps

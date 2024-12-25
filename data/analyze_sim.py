@@ -9,6 +9,7 @@ from . import analyze_eachnode_packet_process
 import csv
 
 packet_info_result_dir_path = './data/result/packet_info/'
+packet_info_result_for_each_node_dir_path = './data/result/packet_info_for_each_node/'
 
 def execute(fileName, num_nodes, alpha, sourceSinkNum, isDeleteFile=True):
     adjacent_matrix = np.genfromtxt(getAdjacencyMetrixPath(fileName), delimiter=',', dtype=float)
@@ -49,6 +50,18 @@ def plotNetworkWithPacketProcessAmount(fileName, adjacent_matrix, num_nodes, alp
     total_receive_counts = sum(receive_counts)
     packet_loss_rate = total_loss_counts / total_enqueue_counts
 
+    with open(packet_info_result_for_each_node_dir_path + fileName + ".csv", mode='w', newline='') as file:
+        writer = csv.writer(file)
+        for index, val in enumerate(betweenness_centrality):
+            enqueue_count = node_counts[index][0]
+            dequeue_count = node_counts[index][1]
+            loss_count = node_counts[index][2]
+            receive_count = node_counts[index][3]
+            if enqueue_count == 0:
+                continue
+            packetLoss = loss_count / enqueue_count
+            writer.writerow([alpha, sourceSinkNum, index, val, enqueue_count, dequeue_count, loss_count, receive_count, packetLoss])
+
     with open(packet_info_result_dir_path + fileName + ".csv", mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow([alpha, sourceSinkNum, total_enqueue_counts, total_dequeue_counts, total_loss_counts, total_receive_counts, packet_loss_rate])
@@ -63,7 +76,7 @@ def plotNetworkWithWeigh(metadata, G, node_weights, node_weights_type):
     node_colors = [cmap(size / max_weight) for size in node_weights]
     plt.figure(figsize=(7, 10))
     np.random.seed(10)
-    nx.draw(G, edge_color='gray', node_color=node_colors, node_size=40, with_labels=False)
+    nx.draw(G, edge_color='gray', node_color=node_colors, node_size=40, with_labels=True)
 
     filename = f'{node_weights_type}.png'
     filepath = os.path.join(f"./data/output/networkplot/{metadata}", filename)

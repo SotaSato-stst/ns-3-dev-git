@@ -35,7 +35,7 @@ def main():
 def execute_simulation(alpha, linkNumsForEachStep, sourceSinkNum, fileName, num_nodes, bandWidth):
     gen.execute(alpha=alpha, M=linkNumsForEachStep,sourceSinkNum=sourceSinkNum, num_nodes=num_nodes, fileName=fileName+".csv")
     subprocess.run(['./ns3', 'run', 'sim.cc', '--', fileName, str(alpha), str(sourceSinkNum), str(bandWidth)])
-    analyze_sim.execute(fileName, num_nodes, alpha=alpha, sourceSinkNum=sourceSinkNum)
+    # analyze_sim.execute(fileName, num_nodes, alpha=alpha, sourceSinkNum=sourceSinkNum)
 
 def genFileName(time, alpha, linkNumsForEachStep, sourceSinkNum, yamlData, index):
     def getString(_str, value=None):
